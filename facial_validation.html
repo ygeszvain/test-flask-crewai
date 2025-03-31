@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identity Verification</title>
+</head>
+<body>
+    <h2>Upload Driver's License and Capture Live Image</h2>
+
+    <form id="upload-form">
+        <label for="license">Upload Driver's License:</label>
+        <input type="file" id="license" accept="image/*" required>
+        <br><br>
+
+        <video id="video" width="320" height="240" autoplay></video>
+        <button type="button" onclick="captureImage()">Capture Webcam Image</button>
+        <canvas id="canvas" style="display: none;"></canvas>
+        <br><br>
+
+        <button type="submit">Verify Identity</button>
+    </form>
+
+    <p id="result"></p>
+
+    <script>
+        // Webcam setup
+        const video = document.getElementById('video');
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            video.srcObject = stream;
+        });
+
+        function captureImage() {
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        }
+
+        document.getElementById('upload-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const licenseFile = document.getElementById('license').files[0];
+            const canvas = document.getElementById('canvas');
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append('license', licenseFile);
+                formData.append('webcam', blob, 'webcam.jpg');
+
+                const response = await fetch('/verify', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                document.getElementById('result').innerText = result.match 
+                    ? `✅ Match Found! Confidence: ${result.confidence.toFixed(2)}` 
+                    : "❌ No Match Found!";
+            }, 'image/jpeg');
+        });
+    </script>
+</body>
+</html>
