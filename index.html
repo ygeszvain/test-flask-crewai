@@ -6,6 +6,7 @@
     <title>Flask Chat with AI Agents</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
+        /* Make the chat box scrollable */
         #chat-box {
             width: 100%;
             height: 400px;
@@ -16,6 +17,24 @@
             flex-direction: column;
             background-color: #f9f9f9;
         }
+
+        #suggestions {
+            margin-top: 10px;
+        }
+
+        button {
+            margin: 5px;
+            padding: 8px 12px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -25,20 +44,44 @@
     <input type="text" id="message" placeholder="Type your message...">
     <button onclick="sendMessage()">Send</button>
 
+    <h3>AI Suggestions</h3>
+    <div id="suggestions"></div>
+
     <script>
         var socket = io();
 
-        function sendMessage() {
-            var message = document.getElementById("message").value;
+        function sendMessage(text=null) {
+            var message = text || document.getElementById("message").value;
             if (message.trim() !== "") {
-                document.getElementById("chat-box").innerHTML += `<p><strong>You:</strong> ${message}</p>`;
                 socket.emit("message", { message: message });
+                appendMessage("You", message);
                 document.getElementById("message").value = "";
             }
         }
 
-        socket.on("agent_response", function(data) {
-            document.getElementById("chat-box").innerHTML += `<p><strong>${data.agent}:</strong> ${data.message}</p>`;
+        function appendMessage(sender, message) {
+            var chatBox = document.getElementById("chat-box");
+            var messageElement = document.createElement("p");
+            messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
+            chatBox.appendChild(messageElement);
+            
+            // Auto-scroll to the latest message
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        socket.on("response", function(data) {
+            appendMessage("AI", data.message);
+        });
+
+        socket.on("suggestions", function(data) {
+            var suggestionsDiv = document.getElementById("suggestions");
+            suggestionsDiv.innerHTML = "";
+            data.suggestions.forEach(suggestion => {
+                let button = document.createElement("button");
+                button.innerText = suggestion;
+                button.onclick = function() { sendMessage(suggestion); };
+                suggestionsDiv.appendChild(button);
+            });
         });
     </script>
 </body>
