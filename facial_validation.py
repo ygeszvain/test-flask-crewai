@@ -1,3 +1,4 @@
+# pip install flask requests azure-storage-blob python-dotenv opencv-python
 import os
 import requests
 from flask import Flask, request, jsonify
